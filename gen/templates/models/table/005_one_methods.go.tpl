@@ -65,8 +65,9 @@ func (o *{{$tAlias.UpSingular}}) Update(ctx context.Context, exec bob.Executor, 
     return err
   }
 
-	{{if $.Relationships.Get $table.Key}}o.R = v.R{{end}}
+	{{if $.Relationships.Get $table.Key}}oldR := o.R{{end}}
   *o = *v
+	{{if $.Relationships.Get $table.Key}}o.R = oldR{{end}}
 
   return nil
 }
