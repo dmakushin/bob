@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **BREAKING:** The generated single-model `(*Foo).Update` now keeps whatever was already loaded in `.R` (including `R.Loaded`), instead of throwing it away. Previously, `Update` scanned the `UPDATE ... RETURNING` result into a fresh model `v` (whose `.R` is always empty, since an `UPDATE` statement never loads relationships), assigned `o.R = v.R`, then immediately overwrote every field of `o` — `.R` included — with `*o = *v`. The `o.R = v.R` assignment was a dead write: `v.R` is always empty and `*o = *v` discards it a line later regardless of whether it ran. The net, observable effect was that a successful `Update()` silently emptied `.R` and reset every `R.Loaded.<Rel>` flag to `false`, on every call, for every table with at least one relationship.
+
+  This was already the only path with this behavior: `Reload` (`o2.R = o.R` before `*o = *o2`), the slice `UpdateAll`/`ReloadAll`/`DeleteMod`/`MergeMod` loaders (all funnel through `copyMatchingRows`, which does `new.R = old.R`), and the MySQL dialect's single-model `Update` override (`s.Overwrite(o)`, which never touches `.R` at all) all already preserve the pre-update `.R`. Only the PostgreSQL/SQLite (default-block) single-model `Update` lost it — a dialect-inconsistent contract for the exact same method, not an intentional design choice with any documentation or test backing it.
+
+  `(*Foo).Update` now does `oldR := o.R` before `*o = *v`, then `o.R = oldR` after — the same "carry the old `.R` forward across the new column values" shape already used by `Reload` and `copyMatchingRows`. Only `.R`; every column still comes from the `UPDATE ... RETURNING` result exactly as before, and `Update`'s error path (an early `return err` that leaves `o` untouched) is unchanged.
+
+  **Breaking change:** any code relying on `Update()` emptying `.R` — most notably a "reload if not loaded" pattern keyed off `R.Loaded.<Rel>` — will stop reloading after `Update()`, because `R.Loaded.<Rel>` (part of the struct value copied into `oldR`) now stays `true` and keeps pointing at pre-update data. `.R` has always been a cache with no freshness guarantee once any of these code paths hold a reference to it; callers that need post-update relationship data should still fetch it explicitly (`Reload`, `Load<Rel>`, or a fresh `Preload`) rather than relying on `.R` after `Update()`.
+
 ## [v0.50.0] - 2026-08-11
 
 ### Added
