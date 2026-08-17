@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   **Breaking change:** any code relying on `Update()` emptying `.R` — most notably a "reload if not loaded" pattern keyed off `R.Loaded.<Rel>` — will stop reloading after `Update()`, because `R.Loaded.<Rel>` (part of the struct value copied into `oldR`) now stays `true` and keeps pointing at pre-update data. `.R` has always been a cache with no freshness guarantee once any of these code paths hold a reference to it; callers that need post-update relationship data should still fetch it explicitly (`Reload`, `Load<Rel>`, or a fresh `Preload`) rather than relying on `.R` after `Update()`.
 
+- Fixed `QueryStmt.All` (the prepared-statement path returned by `PrepareQueryx`) silently falling back to per-element `AfterQueryHook` calls when the slice type is not `HookableType` but the single/element type is, instead of returning `ErrHookableTypeMismatch` like `Allx` (the non-prepared path) already does for the same type combination. **Breaking change**: code on the prepared path relying on the undocumented fallback for this type combination now receives `ErrHookableTypeMismatch` instead of silently succeeding. Generated code is unaffected, since generated `<Table>Slice` types always implement `AfterQueryHook`.
+
 ## [v0.50.0] - 2026-08-11
 
 ### Added
