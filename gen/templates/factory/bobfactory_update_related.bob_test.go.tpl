@@ -45,8 +45,9 @@
 {{- $ftable := $.Aliases.Table $rel.Foreign }}
 
 // Test{{$tAlias.UpSingular}}UpdateKeepsLoadedRelationships checks that
-// (*models.{{$tAlias.UpSingular}}).Update keeps whatever is already in .R,
-// like Reload and the slice update path do.
+// (*models.{{$tAlias.UpSingular}}).Update only overwrites the column fields,
+// leaving .R (and any other non-column field, such as the counts .C added by
+// the counts plugin) untouched.
 func Test{{$tAlias.UpSingular}}UpdateKeepsLoadedRelationships(t *testing.T) {
   if testDB == nil {
     t.Skip("skipping test, no DSN provided")
