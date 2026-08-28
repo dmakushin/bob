@@ -65,9 +65,12 @@ func (o *{{$tAlias.UpSingular}}) Update(ctx context.Context, exec bob.Executor, 
     return err
   }
 
-	{{if $.Relationships.Get $table.Key}}o.R = v.R{{end}}
-  *o = *v
-
+  // Only the column fields are copied over, so that any non-column field
+  // (the relationship cache .R, plugin fields such as the counts .C) survives.
+  {{range $column := $table.Columns -}}
+  {{- $colAlias := $tAlias.Column $column.Name}}
+  o.{{$colAlias}} = v.{{$colAlias}}
+  {{end}}
   return nil
 }
 {{- end}}
@@ -90,9 +93,12 @@ func (o *{{$tAlias.UpSingular}}) Reload(ctx context.Context, exec bob.Executor) 
 	if err != nil {
 		return err
 	}
-	{{if $.Relationships.Get $table.Key}}o2.R = o.R{{end}}
-	*o = *o2
-
+	// Only the column fields are copied over, so that any non-column field
+	// (the relationship cache .R, plugin fields such as the counts .C) survives.
+	{{range $column := $table.Columns -}}
+	{{- $colAlias := $tAlias.Column $column.Name}}
+	o.{{$colAlias}} = o2.{{$colAlias}}
+	{{end}}
 	return nil
 }
 
