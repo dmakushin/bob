@@ -94,7 +94,8 @@ func TestUpdate(t *testing.T) {
 			Query: psql.Update(
 				um.Table("employees"),
 				um.SetCol("sales_count").To("sales_count + 1"),
-				um.From("accounts",
+				um.From(
+					"accounts",
 					um.InnerJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),
@@ -194,7 +195,8 @@ func TestUpdate(t *testing.T) {
 			Query: psql.Update(
 				um.Table("employees"),
 				um.SetCol("sales_count").To("sales_count + 1"),
-				um.From("accounts",
+				um.From(
+					"accounts",
 					um.LeftJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),
@@ -248,7 +250,8 @@ func TestUpdate(t *testing.T) {
 			Query: psql.Update(
 				um.Table("employees"),
 				um.SetCol("n").To("1"),
-				um.From("accounts",
+				um.From(
+					"accounts",
 					um.InnerJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),

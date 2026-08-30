@@ -47,7 +47,8 @@ func TestDelete(t *testing.T) {
 		"using item with inner join": {
 			Query: psql.Delete(
 				dm.From("employees"),
-				dm.Using("accounts",
+				dm.Using(
+					"accounts",
 					dm.InnerJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),
@@ -130,7 +131,8 @@ func TestDelete(t *testing.T) {
 		"using item with left join and alias": {
 			Query: psql.Delete(
 				dm.From("employees"),
-				dm.Using("accounts",
+				dm.Using(
+					"accounts",
 					dm.LeftJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),
@@ -180,7 +182,8 @@ func TestDelete(t *testing.T) {
 		"with multiple using items join rows from and table": {
 			Query: psql.Delete(
 				dm.From("employees"),
-				dm.Using("accounts",
+				dm.Using(
+					"accounts",
 					dm.LeftJoin("departments").OnEQ(
 						psql.Quote("accounts", "dept_id"),
 						psql.Quote("departments", "id"),
