@@ -124,7 +124,8 @@ func getMySQLDriver(ctx context.Context, config Config) (mysqlDriver.Interface, 
 		config.DriverImage = defaultMySQLDriverImage
 	}
 
-	mysqlContainer, err := mysqltest.Run(ctx,
+	mysqlContainer, err := mysqltest.Run(
+		ctx,
 		config.DriverImage,
 		mysqltest.WithDatabase("bobgen"),
 		mysqltest.WithUsername("root"),

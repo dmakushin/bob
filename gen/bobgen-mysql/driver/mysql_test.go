@@ -25,7 +25,8 @@ func TestDriver(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	mysqlContainer, err := mysqltest.Run(context.Background(),
+	mysqlContainer, err := mysqltest.Run(
+		context.Background(),
 		"mysql:8.0.35",
 		mysqltest.WithDatabase("bobgen"),
 		mysqltest.WithUsername("root"),
