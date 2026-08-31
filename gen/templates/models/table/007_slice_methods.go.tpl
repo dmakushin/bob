@@ -54,8 +54,11 @@ func (o {{$tAlias.UpSingular}}Slice) pkIN() dialect.Expression {
 {{- $pkCol := index $pkCols 0 -}}
 {{- $useMap := and (not $multiPK) ($.Types.CanCompareWithEquals $.CurrentPackage ($table.GetColumn $pkCol).Type)}}
 // copyMatchingRows finds models in the given slice that have the same primary key
-// then it first copies the existing relationships from the old model to the new model
-// and then replaces the old model in the slice with the new model
+// as one of the given models, then copies only the column fields over onto the
+// model already in the slice. The slice keeps its original pointers, so every
+// non-column field (the relationship cache .R, plugin fields such as the counts
+// .C) survives, and callers holding a pointer to a member of the slice see the
+// new column values.
 func (o {{$tAlias.UpSingular}}Slice) copyMatchingRows(from ...*{{$tAlias.UpSingular}}) {
   {{if $useMap -}}
   {{$colAlias := $tAlias.Column $pkCol -}}
@@ -67,16 +70,18 @@ func (o {{$tAlias.UpSingular}}Slice) copyMatchingRows(from ...*{{$tAlias.UpSingu
     }
   }
 
-  for i, old := range o {
+  for _, old := range o {
     new, ok := fromByPK[old.{{$colAlias}}]
     if !ok {
       continue
     }
-    {{if $.Relationships.Get $table.Key}}new.R = old.R{{end}}
-    o[i] = new
+    {{range $column := $table.Columns -}}
+    {{- $colAlias := $tAlias.Column $column.Name}}
+    old.{{$colAlias}} = new.{{$colAlias}}
+    {{end -}}
   }
   {{- else -}}
-  for i, old := range o {
+  for _, old := range o {
     for _, new := range from {
 			{{range $column := $table.Constraints.Primary.Columns -}}
 				{{- $colAlias := $tAlias.Column $column -}}
@@ -91,8 +96,10 @@ func (o {{$tAlias.UpSingular}}Slice) copyMatchingRows(from ...*{{$tAlias.UpSingu
           continue
         }
       {{end -}}
-      {{if $.Relationships.Get $table.Key}}new.R = old.R{{end}}
-      o[i] = new
+      {{range $column := $table.Columns -}}
+      {{- $colAlias := $tAlias.Column $column.Name}}
+      old.{{$colAlias}} = new.{{$colAlias}}
+      {{end -}}
       break
     }
   }
