@@ -8,6 +8,8 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql"
 	"github.com/stephenafamo/bob/dialect/psql/dm"
 	"github.com/stephenafamo/bob/dialect/psql/fm"
+	"github.com/stephenafamo/bob/dialect/psql/sm"
+	"github.com/stephenafamo/bob/dialect/psql/vm"
 	testutils "github.com/stephenafamo/bob/test/utils"
 )
 
@@ -32,6 +34,21 @@ func TestDelete(t *testing.T) {
 			  WHERE (accounts.name = $1)
 			  AND (employees.id = accounts.sales_person)`,
 			ExpectedArgs: []any{"Acme Corporation"},
+		},
+		"using values continues placeholder numbering after cte arguments": {
+			Query: psql.Delete(
+				dm.With("src").As(psql.Select(sm.Columns(psql.Arg("cte value")))),
+				dm.From("widgets"),
+				dm.Using(psql.Values(
+					vm.RowValue(psql.Arg(int64(17), "first")),
+				)).As("requested", "id", "value"),
+				dm.Where(psql.Quote("widgets", "id").EQ(psql.Quote("requested", "id"))),
+			),
+			ExpectedSQL: `WITH src AS (SELECT $1)
+  DELETE FROM widgets USING (VALUES ($2, $3)
+  ) AS "requested"("id", "value")
+  WHERE ("widgets"."id" = "requested"."id")`,
+			ExpectedArgs: []any{"cte value", int64(17), "first"},
 		},
 		"with multiple using items": {
 			Query: psql.Delete(

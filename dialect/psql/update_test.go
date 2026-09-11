@@ -9,6 +9,7 @@ import (
 	"github.com/stephenafamo/bob/dialect/psql/fm"
 	"github.com/stephenafamo/bob/dialect/psql/sm"
 	"github.com/stephenafamo/bob/dialect/psql/um"
+	"github.com/stephenafamo/bob/dialect/psql/vm"
 	testutils "github.com/stephenafamo/bob/test/utils"
 )
 
@@ -35,6 +36,25 @@ func TestUpdate(t *testing.T) {
 			  WHERE (accounts.name = $1)
 			  AND (employees.id = accounts.sales_person)`,
 			ExpectedArgs: []any{"Acme Corporation"},
+		},
+		"from values continues placeholder numbering after set arguments": {
+			Query: psql.Update(
+				um.Table("widgets"),
+				um.SetCol("changed_by").ToArg("tester"),
+				um.SetCol("changed_by_id").ToArg(int64(42)),
+				um.From(psql.Values(
+					vm.RowValue(psql.Arg(int64(17), "first")),
+					vm.RowValue(psql.Arg(int64(29), "second")),
+				)).As("requested", "id", "value"),
+				um.Where(psql.Quote("widgets", "id").EQ(psql.Quote("requested", "id"))),
+			),
+			ExpectedSQL: `UPDATE widgets SET
+  "changed_by" = $1,
+  "changed_by_id" = $2
+  FROM (VALUES ($3, $4), ($5, $6)
+  ) AS "requested"("id", "value")
+  WHERE ("widgets"."id" = "requested"."id")`,
+			ExpectedArgs: []any{"tester", int64(42), int64(17), "first", int64(29), "second"},
 		},
 		"set qualified column as mod": {
 			Query: psql.Update(
