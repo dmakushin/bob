@@ -50,6 +50,24 @@ func TestDelete(t *testing.T) {
   WHERE ("widgets"."id" = "requested"."id")`,
 			ExpectedArgs: []any{"cte value", int64(17), "first"},
 		},
+		"arguments continue across cte using join and where": {
+			Query: psql.Delete(
+				dm.With("source").As(psql.Select(sm.Columns(psql.Arg("source value")))),
+				dm.From("widgets"),
+				dm.Using(
+					"accounts",
+					dm.InnerJoin("requested").On(
+						psql.Quote("accounts", "id").EQ(psql.Arg(int64(17))),
+					),
+				),
+				dm.Where(psql.Quote("widgets", "id").EQ(psql.Arg(int64(29)))),
+			),
+			ExpectedSQL: `WITH source AS (SELECT $1)
+  DELETE FROM widgets USING accounts
+  INNER JOIN requested ON ("accounts"."id" = $2)
+  WHERE ("widgets"."id" = $3)`,
+			ExpectedArgs: []any{"source value", int64(17), int64(29)},
+		},
 		"with multiple using items": {
 			Query: psql.Delete(
 				dm.From("employees"),
